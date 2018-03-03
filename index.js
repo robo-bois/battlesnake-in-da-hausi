@@ -27,9 +27,12 @@ app.post('/start', (request, response) => {
 
   // Response data
   const data = {
-    color: '#DFFF00',
-    head_url: 'http://www.placecage.com/c/200/200', // optional, but encouraged!
-    taunt: "Let's do thisss thang!", // optional, but encouraged!
+    color: '#770103',
+    secondary_color: '#220103',
+    head_url: 'http://saner.unimol.it/img/steering/HausiMuller.png',
+    taunt: 'BLOG POST!',
+    head_type: 'safe',
+    tail_type: 'fat-rattle',
   }
 
   return response.json(data)
