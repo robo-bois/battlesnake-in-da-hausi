@@ -40,15 +40,25 @@ app.post('/start', (request, response) => {
 
 // Handle POST request to '/move'
 app.post('/move', (request, response) => {
-  var snake = snakes[request.body.id][request.body.you];
+  
+  let move = null;
+  
+  try {
+    var snake = snakes[request.body.id][request.body.you];
     
-  if (snake === undefined) {
-      snake = 
-          snakes[request.body.id][request.body.you] = 
-          new Hausi(snakes[request.body.id].gameData);
+    if (snake === undefined) {
+        snake = 
+            snakes[request.body.id][request.body.you] = 
+            new Hausi(snakes[request.body.id].gameData);
+    }
+    
+    move = snake.getMove(request.body);
+  } catch (err) {
+    console.log(err);
   }
   
-  return response.json(snake.getMove(request.body));
+  
+  return response.json(move);
 })
 
 // --- SNAKE LOGIC GOES ABOVE THIS LINE ---

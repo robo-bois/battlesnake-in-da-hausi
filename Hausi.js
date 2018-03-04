@@ -70,12 +70,12 @@ class Hausi {
           }
     }
     
-    genBoard(from_board) {
+    genBoard() {
         let board = new Array(this.boardWidth);
         for (let i = 0; i < this.boardWidth; i++) {
             board[i] = new Array(this.boardHeight);
             for (let j = 0; j < this.boardHeight; j++) {
-                board[i][j] = from_board ? from_board[i][j] : 0;
+                board[i][j] = 0;
             }
         }
         return board;
@@ -118,7 +118,8 @@ class Hausi {
         // Fill board with bad squares where da snakeys are
         for (let i = 0; i < coords.length - !potHeadFoodFlag; i++)  {
             let coord = coords[i];
-            board[coord.x][coord.y] = isFirst ? !(isFirst = false) && this.square.head : this.square.body;
+            board[coord.x][coord.y] = isFirst ? this.square.head : this.square.body;
+            isFirst = false;
         }
         
         return board;
@@ -166,8 +167,6 @@ class Hausi {
         let ourHeadX = this.snake.body.data[0].x;
         let ourHeadY = this.snake.body.data[0].y;
         board[ourHeadX][ourHeadY] = this.square.ourHead;
-
-        //this.printBoard(board);
 
         // Decide our strategy
         let cur_mode = this.findMode.food;
@@ -217,6 +216,23 @@ class Hausi {
         
         
         let dir = foundNode ? foundNode.dir : this.lastResort(board)
+        
+        
+        let bad = false;
+        if (dir === 'up' && (findStartLoc[1] < 1 || board[findStartLoc[0]][findStartLoc[1] - 1] === this.square.body))
+            bad = true;
+        else if (dir === 'down' && (findStartLoc[1] >= this.boardHeight || board[findStartLoc[0]][findStartLoc[1] + 1] === this.square.body))
+            bad = true;
+        else if (dir === 'right' && (findStartLoc[0] >= this.boardWidth || board[findStartLoc[0] + 1][findStartLoc[1]] === this.square.body))
+            bad = true;
+        else if (dir === 'left' && (findStartLoc[0] < 1 ||  board[findStartLoc[0] - 1][findStartLoc[1]] === this.square.body))
+            bad = true;
+            
+        if (bad) {
+            dir = this.lastResort(board);
+            console.log('snake was retarded, going ' + dir);
+        }
+        
 
         /*if(finalDir == -1){
           //FUCK NO TAIL, STALL
@@ -327,6 +343,9 @@ class Hausi {
                     let realTailX = this.snake.body.data[this.snakeLength - 1].x;
                     let realTailY = this.snake.body.data[this.snakeLength - 1].y;
                     
+                    if (!this.checkIfFits(pos, node, board))
+                         return false;
+                    
                     return (!this.justAte && this.snakeLength > 3 && node.pos[0] === realTailX && node.pos[1] === realTailY) || node.len > 1; //return direction to tail piece
                 };
                 break;
@@ -349,12 +368,17 @@ class Hausi {
                     return false;
                 };
                 isSafe = (num) => {
-                    return num === this.square.food || num === this.square.normal;
+                    return num === this.square.food || num === this.square.normal || num === this.square.potHead;
                 };
                 noTarget = (visited) => {
                     return visited.map((arr) => arr.reduce((a, b) => a + b, 0)).reduce((a, b) => a + b, 0);
                 };
                 break;
+        }
+        
+        if (mode === this.findMode.space) {
+            if (!isSafe(board[pos[0]][pos[1]]))
+                return 0;
         }
 
         while (queue.length > 0) {
@@ -414,17 +438,43 @@ class Hausi {
         //Lasttttt resortttt
         // Try up, right, down, left
         let ourHeadX = this.snake.body.data[0].x; 
-        let ourHeadY = this.snake.body.data[0].y; 
+        let ourHeadY = this.snake.body.data[0].y;
+        
+        let potentials = {
+            up: -1,
+            down: -1,
+            left: -1,
+            right: -1,
+        }
+        
         if (ourHeadY > 0 && board[ourHeadX][ourHeadY - 1] <= this.square.food)
-            return "up";
-        else if (ourHeadX < this.boardWidth - 1 && board[ourHeadX + 1][ourHeadY] <= this.square.food)
-            return "right";
-        else if (ourHeadY < this.boardHeight - 1 && board[ourHeadX][ourHeadY + 1] <= this.square.food)
-            return "down";
-        else if (ourHeadX > 0 && board[ourHeadX - 1][ourHeadY] <= this.square.food)
-            return "left";
-        else
-            console.log('kill me'); 
+            potentials.up = this.findPath(board, [ourHeadX, ourHeadY - 1], this.findMode.space);
+        if (ourHeadX < this.boardWidth - 1 && board[ourHeadX + 1][ourHeadY] <= this.square.food)
+            potentials.right = this.findPath(board, [ourHeadX + 1, ourHeadY], this.findMode.space);
+        if (ourHeadY < this.boardHeight - 1 && board[ourHeadX][ourHeadY + 1] <= this.square.food)
+            potentials.down = this.findPath(board, [ourHeadX, ourHeadY + 1], this.findMode.space);
+        if (ourHeadX > 0 && board[ourHeadX - 1][ourHeadY] <= this.square.food)
+            potentials.left = this.findPath(board, [ourHeadX - 1, ourHeadY], this.findMode.space);
+            
+        let maxVal = potentials.up;
+        let maxDir = 'up';
+        
+        if (potentials.right > maxVal) {
+            maxVal = potentials.right;
+            maxDir = 'right';
+        }
+        
+        if (potentials.down > maxVal) {
+            maxVal = potentials.down;
+            maxDir = 'down';
+        }
+        
+        if (potentials.left > maxVal) {
+            maxVal = potentials.left;
+            maxDir = 'left';
+        }
+        
+        return maxDir;
     }
 }
 
