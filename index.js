@@ -9,6 +9,10 @@ const {
   poweredByHandler
 } = require('./handlers.js')
 
+const Hausi = require('./Hausi.js');
+
+const snakes = {};
+
 // For deployment to Heroku, the port needs to be set using ENV, so
 // we check for the port number in process.env
 app.set('port', (process.env.PORT || 9001))
@@ -19,36 +23,32 @@ app.use(logger('dev'))
 app.use(bodyParser.json())
 app.use(poweredByHandler)
 
+
+
 // --- SNAKE LOGIC GOES BELOW THIS LINE ---
 
 // Handle POST request to '/start'
 app.post('/start', (request, response) => {
-  // NOTE: Do something here to start the game
-
-  // Response data
-  const data = {
-    color: '#770103',
-    secondary_color: '#220103',
-    head_url: 'http://saner.unimol.it/img/steering/HausiMuller.png',
-    taunt: 'BLOG POST!',
-    head_type: 'safe',
-    tail_type: 'fat-rattle',
+  if (snakes[request.body.game_id] === undefined) {
+      snakes[request.body.game_id] = {};
   }
-
-  return response.json(data)
+  
+  snakes[request.body.game_id].gameData = request.body;
+  
+  return response.json(Hausi.snakeData);
 })
 
 // Handle POST request to '/move'
 app.post('/move', (request, response) => {
-  // NOTE: Do something here to generate your move
-
-  // Response data
-  const data = {
-    move: 'up', // one of: ['up','down','left','right']
-    taunt: 'Outta my way, snake!', // optional, but encouraged!
+  var snake = snakes[request.body.id][request.body.you];
+    
+  if (snake === undefined) {
+      snake = 
+          snakes[request.body.id][request.body.you] = 
+          new Hausi(snakes[request.body.id].gameData);
   }
-
-  return response.json(data)
+  
+  return response.json(snake.getMove(request.body));
 })
 
 // --- SNAKE LOGIC GOES ABOVE THIS LINE ---
